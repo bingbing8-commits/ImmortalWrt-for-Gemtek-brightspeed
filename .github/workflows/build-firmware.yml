@@ -77,24 +77,26 @@ jobs:
 
       - name: Update & Install feeds (Fixed for Airoha)
         run: |
-          # 1. 优先只更新自带配置的 feeds 
+          # 1. 更新 feeds
           ./scripts/feeds update -a
           
-          # 2. 【核心修复】在安装前，直接删除引发冲突的两个上游错误 Kconfig 依赖
+          # 2. 斩断阻断编译的两个 Kconfig 循环依赖
           FIND_SQUEEZE=$(find feeds/ -name "Config.in" | grep "squeezelite" || true)
           [ -n "$FIND_SQUEEZE" ] && sed -i '/depends on PACKAGE_squeezelite-custom/d' "$FIND_SQUEEZE"
           
           FIND_FWKNOP=$(find feeds/ -name "Config.in" | grep "fwknop" || true)
           [ -n "$FIND_FWKNOP" ] && sed -i '/depends on PACKAGE_fwknopd/d' "$FIND_FWKNOP"
 
-          # 3. 执行安装
+          # 3. 安装 feeds
           ./scripts/feeds install -a
 
-      - name: Apply feed patches with lax verification
+      - name: Apply feed patches
         run: |
-          # 【针对第一个错误】将严格校验改为 0 绕过行号偏移，允许 Airoha 专属补丁强行合入
-          FEED_PATCHES_STRICT=0 bash scripts/apply-feed-patches.sh
-
+          # 4. 【核心修复】直接删除这个已经与上游代码冲突且无法对齐的补丁文件
+          rm -f patches/feeds/app_airoha/luci-app-airoha-npu/root/usr/libexec/rpcd/100-offload-unsupported-xg2010g-2g.patch
+          
+          # 5. 重新开启严格校验，让其余没有冲突的 Airoha 核心补丁干净利落地打进去
+          FEED_PATCHES_STRICT=1 bash scripts/apply-feed-patches.sh
       - name: Configure
         run: |
           cp '${{ inputs.config_seed }}' .config

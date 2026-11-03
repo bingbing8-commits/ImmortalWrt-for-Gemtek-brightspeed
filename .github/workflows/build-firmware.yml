@@ -87,6 +87,20 @@ jobs:
          
       - name: Apply feed patches
         run: FEED_PATCHES_STRICT=1 bash scripts/apply-feed-patches.sh
+      - name: Fix Kconfig recursive dependencies
+        run: |
+         # 1. 修复 squeezelite 的循环依赖
+         FIND_SQUEEZE=$(find feeds/ -name "Config.in" | grep "squeezelite" || true)
+         if [ -n "$FIND_SQUEEZE" ]; then
+         sed -i '/depends on PACKAGE_squeezelite-custom/d' "$FIND_SQUEEZE"
+         fi
+
+         # 2. 修复 fwknopd / luci-app-fwknopd 的循环依赖
+         # 斩断 FWKNOPD_GPG 对 PACKAGE_fwknopd 的依赖
+         FIND_FWKNOP=$(find feeds/ -name "Config.in" | grep "fwknop" || true)
+          if [ -n "$FIND_FWKNOP" ]; then
+          sed -i '/depends on PACKAGE_fwknopd/d' "$FIND_FWKNOP"
+          fi
 
       - name: Configure
         run: |

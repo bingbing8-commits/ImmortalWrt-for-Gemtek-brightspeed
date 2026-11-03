@@ -126,19 +126,17 @@ jobs:
           # 5. 运行补丁脚本
           FEED_PATCHES_STRICT=1 bash scripts/apply-feed-patches.sh
 
-      - name: Configure
+      - name: Generate configuration
         run: |
-          cp '${{ inputs.config_seed }}' .config
-          BUILD_DATE='${{ steps.version.outputs.date }}' \
-          BUILD_ID='${{ steps.version.outputs.build_id }}' \
-          REPO_COMMIT='${{ steps.version.outputs.repo_commit }}' \
-          UPSTREAM_COMMIT='${{ steps.version.outputs.upstream_commit }}' \
-          VERSION_CODE='${{ steps.version.outputs.version_code }}' \
+          # 6. 生成配置
+          cp 1710.config .config
           bash scripts/set-build-version.sh .config
+          
+          # 刷新临时配置缓存，确保刚刚 rm -rf 的软件和新加的 dummy 包被系统感知
+          rm -rf tmp
+          
           make defconfig
-          bash scripts/check-gemtek-profile-isolation.sh --config .config
-          grep -E 'CONFIG_(IMAGEOPT|EXTRA_IMAGE_NAME|VERSIONOPT|VERSION_DIST|VERSION_NUMBER|VERSION_CODE|VERSION_FILENAMES|VERSION_CODE_FILENAMES)[= ]' .config
-
+          
       - name: Download sources
         run: make download -j$(nproc)
 

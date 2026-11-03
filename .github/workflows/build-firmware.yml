@@ -80,9 +80,13 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
           bash scripts/fix-stale-golang-host.sh
-
+          
+      - name: Remove problematic patch
+        run: |
+         rm -f patches/feeds/app_airoha/luci-app-airoha-npu/root/usr/libexec/rpcd/100-offload-unsupported-xg2010g-2g.patch
+         
       - name: Apply feed patches
-        run: FEED_PATCHES_STRICT=0 bash scripts/apply-feed-patches.sh
+        run: FEED_PATCHES_STRICT=1 bash scripts/apply-feed-patches.sh
 
       - name: Configure
         run: |
